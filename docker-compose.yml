@@ -108,7 +108,7 @@ services:
   debezium-server:
     profiles: [aws]
     image: quay.io/debezium/server:3.0
-    env_file: [.env.aws]
+    env_file: [{ path: .env.aws, required: false }]
     volumes: [./aws/debezium-server.properties:/debezium/config/application.properties:ro]
     depends_on:
       postgres: { condition: service_healthy }
