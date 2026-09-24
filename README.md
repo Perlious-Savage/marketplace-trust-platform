@@ -6,6 +6,8 @@ reconciled end to end** so no event silently disappears between the stream and t
 
 ![ci](https://github.com/Perlious-Savage/marketplace-trust-platform/actions/workflows/ci.yml/badge.svg)
 
+![Grafana dashboard: throughput, lag, latency, trust alerts, reconciliation, funnel](docs/grafana.png)
+
 ```mermaid
 flowchart LR
   G[generator<br/>fake traffic + injected fraud] --> PG[(PostgreSQL<br/>wal_level=logical)]
@@ -41,8 +43,8 @@ flowchart LR
 
 | Metric | Value |
 |---|---|
-| Commit → risk score latency (steady state) | **p50 ≈ 110 ms, p95 ≈ 250–350 ms** (Postgres commit → Debezium → Redpanda → detector → stored) |
-| Reconciliation, 4 topics, ~26k events | Kafka 10,127 / S3 10,127 / warehouse 10,127 on `listings`; **0 mismatches** on every topic |
+| Commit → risk score latency | **p50 95 ms, p95 341 ms** over 13.8k listing events in 20 min (Postgres commit → Debezium → Redpanda → detector → stored) |
+| Reconciliation, 4 topics, ~97k events | Kafka 34,381 / S3 34,381 / warehouse 34,381 on `listings`; **0 mismatches** on every topic |
 | dbt | 41 nodes, 40 pass + 1 warn (interactions on listings not yet archived) |
 | AWS run (ap-south-1, Free plan, `http` mode) | 252 CDC events (132 inserts, 98 updates, 22 deletes) → Lambda (avg 33 ms/invocation) → Parquet in S3, 8 price anomalies flagged; torn down afterwards |
 | Tests | 17 pytest (detectors, sqlglot guardrails, Lambda handler for both triggers) |
@@ -59,7 +61,7 @@ docker compose up -d --build      # postgres, redpanda, debezium, redis, s3, det
 | | |
 |---|---|
 | Grafana | http://localhost:3000 (dashboard "Marketplace Trust & Data Platform") |
-| API docs | http://localhost:8000/docs |
+| API docs | http://localhost:8000/docs ([screenshot](docs/api.png)) |
 | Kafka | `localhost:19092` · Debezium REST `localhost:8083` · S3 `localhost:8333` · Postgres `localhost:5432` |
 
 ```bash

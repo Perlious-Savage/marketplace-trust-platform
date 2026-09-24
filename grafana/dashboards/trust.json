@@ -35,7 +35,12 @@
     }
    ],
    "fieldConfig": {
-    "defaults": {},
+    "defaults": {
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "blue"
+     }
+    },
     "overrides": []
    },
    "id": 1
@@ -67,7 +72,12 @@
     }
    ],
    "fieldConfig": {
-    "defaults": {},
+    "defaults": {
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "orange"
+     }
+    },
     "overrides": []
    },
    "id": 2
@@ -100,7 +110,11 @@
    ],
    "fieldConfig": {
     "defaults": {
-     "unit": "percentunit"
+     "unit": "percentunit",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "purple"
+     }
     },
     "overrides": []
    },
@@ -134,7 +148,24 @@
    ],
    "fieldConfig": {
     "defaults": {
-     "unit": "ms"
+     "unit": "ms",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 500
+       },
+       {
+        "color": "red",
+        "value": 1000
+       }
+      ]
+     }
     },
     "overrides": []
    },
@@ -167,7 +198,21 @@
     }
    ],
    "fieldConfig": {
-    "defaults": {},
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "red",
+        "value": 1
+       }
+      ]
+     }
+    },
     "overrides": []
    },
    "id": 5
@@ -199,7 +244,21 @@
     }
    ],
    "fieldConfig": {
-    "defaults": {},
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "red",
+        "value": 1
+       }
+      ]
+     }
+    },
     "overrides": []
    },
    "id": 6
