@@ -1,0 +1,16 @@
+confluent-kafka
+psycopg[binary]
+redis
+boto3
+pyarrow
+duckdb
+dbt-duckdb
+fastapi
+uvicorn
+langgraph
+langchain
+langchain-anthropic
+langchain-openai
+sqlglot
+pytest
+ruff

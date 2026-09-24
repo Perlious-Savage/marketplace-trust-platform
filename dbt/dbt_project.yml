@@ -1,0 +1,8 @@
+name: marketplace
+version: "1.0"
+profile: marketplace
+vars:
+  raw_path: s3://lake/raw
+models:
+  marketplace:
+    +materialized: table

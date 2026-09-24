@@ -1,0 +1,11 @@
+.env
+.env.aws
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.duckdb*
+dbt/target/
+dbt/logs/
+aws/build/
+*.zip
+dbt/.user.yml

@@ -1,0 +1,72 @@
+version: 2
+
+models:
+  - name: stg_cdc_events
+    description: Raw Kafka messages from the S3 Parquet lake, deduplicated on (topic, partition, offset).
+  - name: fact_listing_events
+    description: One row per listing change captured by CDC (created, updated, price_changed, deleted, snapshot).
+    columns:
+      - name: listing_event_id
+        tests: [unique, not_null]
+      - name: event_type
+        tests:
+          - accepted_values: { values: [created, snapshot, updated, price_changed, deleted] }
+  - name: fact_listing_interactions
+    description: Buyer interactions with listings (view, favorite, lead).
+    columns:
+      - name: interaction_id
+        tests: [unique, not_null]
+      - name: interaction_type
+        tests:
+          - accepted_values: { values: [view, favorite, lead] }
+      - name: listing_id
+        tests:
+          - relationships: { to: ref('dim_listing'), field: listing_id, config: { severity: warn } }
+  - name: fact_risk_events
+    description: Real-time trust scores produced by the stream processor, one per scored listing event.
+    columns:
+      - name: risk_event_id
+        tests: [unique, not_null]
+      - name: status
+        tests:
+          - accepted_values: { values: [OK, WATCH, REVIEW] }
+  - name: dim_listing
+    description: Current state of every listing ever seen (SCD1), including deleted ones.
+    columns:
+      - name: listing_id
+        tests: [unique, not_null]
+  - name: dim_seller
+    description: Current seller profile with how many accounts share the same phone number.
+    columns:
+      - name: seller_id
+        tests: [unique, not_null]
+  - name: dim_category
+    description: Category / subcategory hierarchy (property, car, classified).
+    columns:
+      - name: category_key
+        tests: [unique, not_null]
+  - name: dim_location
+    description: Listing locations (Dubai communities).
+    columns:
+      - name: location_key
+        tests: [unique, not_null]
+  - name: mart_seller_health
+    description: One row per seller - listings, deletions, review/velocity/duplicate alerts, leads and a 0-1 health score.
+    columns:
+      - name: seller_id
+        tests: [unique, not_null]
+      - name: health_status
+        tests:
+          - accepted_values: { values: [healthy, watch, at_risk] }
+  - name: mart_listing_quality
+    description: One row per live listing - age, days since update, 7-day views/leads, latest risk status, stale flag.
+    columns:
+      - name: listing_id
+        tests: [unique, not_null]
+  - name: mart_marketplace_funnel
+    description: Daily funnel per category and location - listings created, views, favorites, leads, view-to-lead rate.
+  - name: mart_trust_metrics
+    description: Hourly trust KPIs - listings scored, flagged, review count, duplicate and price-anomaly rates, p95 latency.
+    columns:
+      - name: metric_hour
+        tests: [unique, not_null]

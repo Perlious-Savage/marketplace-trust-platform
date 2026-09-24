@@ -1,0 +1,23 @@
+{
+  "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+  "plugin.name": "pgoutput",
+  "database.hostname": "postgres",
+  "database.port": "5432",
+  "database.user": "postgres",
+  "database.password": "postgres",
+  "database.dbname": "marketplace",
+  "topic.prefix": "mkt",
+  "table.include.list": "public.sellers,public.listings,public.listing_interactions",
+  "slot.name": "dbz_kafka",
+  "publication.name": "dbz_kafka_pub",
+  "publication.autocreate.mode": "filtered",
+  "decimal.handling.mode": "double",
+  "poll.interval.ms": "50",
+  "tombstones.on.delete": "false",
+  "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+  "key.converter.schemas.enable": "false",
+  "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+  "value.converter.schemas.enable": "false",
+  "topic.creation.default.replication.factor": "1",
+  "topic.creation.default.partitions": "3"
+}

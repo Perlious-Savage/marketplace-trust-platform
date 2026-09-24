@@ -1,0 +1,9 @@
+[tool.pytest.ini_options]
+pythonpath = ["processor", "api", "aws"]
+
+[tool.ruff]
+line-length = 140
+exclude = ["dbt"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

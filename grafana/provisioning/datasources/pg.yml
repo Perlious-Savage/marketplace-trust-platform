@@ -1,0 +1,10 @@
+apiVersion: 1
+datasources:
+  - name: Postgres
+    uid: pg
+    type: grafana-postgresql-datasource
+    url: postgres:5432
+    user: postgres
+    isDefault: true
+    secureJsonData: { password: postgres }
+    jsonData: { database: marketplace, sslmode: disable, postgresVersion: 1600, timeInterval: 5s }

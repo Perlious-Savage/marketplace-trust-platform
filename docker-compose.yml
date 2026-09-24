@@ -1,0 +1,116 @@
+x-app: &app
+  build: .
+  image: mkt-app
+  restart: unless-stopped
+  env_file: [{ path: .env, required: false }]
+  environment:
+    PG_DSN: postgresql://postgres:postgres@postgres:5432/marketplace
+    PG_RO_DSN: postgresql://analyst_ro:analyst_ro@postgres:5432/marketplace
+    KAFKA: redpanda:9092
+    REDIS_URL: redis://redis:6379/0
+    S3_ENDPOINT: http://s3:8333
+    S3_HOST: s3:8333
+    AWS_ACCESS_KEY_ID: local
+    AWS_SECRET_ACCESS_KEY: local
+    AWS_REGION: us-east-1
+    WAREHOUSE_PATH: /data/warehouse.duckdb
+  depends_on:
+    postgres: { condition: service_healthy }
+    redpanda: { condition: service_healthy }
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    command: [postgres, -c, wal_level=logical, -c, max_replication_slots=4, -c, max_wal_senders=4]
+    environment: { POSTGRES_DB: marketplace, POSTGRES_PASSWORD: postgres }
+    ports: ["5432:5432"]
+    volumes: [./postgres:/docker-entrypoint-initdb.d:ro, pg:/var/lib/postgresql/data]
+    healthcheck: { test: [CMD, pg_isready, -U, postgres, -d, marketplace], interval: 3s, retries: 30 }
+
+  redpanda:
+    image: redpandadata/redpanda:latest
+    command:
+      - redpanda
+      - start
+      - --mode=dev-container
+      - --smp=1
+      - --memory=1G
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092,OUTSIDE://0.0.0.0:19092
+      - --advertise-kafka-addr=PLAINTEXT://redpanda:9092,OUTSIDE://localhost:19092
+    ports: ["19092:19092"]
+    healthcheck: { test: [CMD, rpk, cluster, info], interval: 3s, retries: 30 }
+
+  connect:
+    image: quay.io/debezium/connect:3.0
+    environment:
+      BOOTSTRAP_SERVERS: redpanda:9092
+      GROUP_ID: connect
+      CONFIG_STORAGE_TOPIC: _connect_configs
+      OFFSET_STORAGE_TOPIC: _connect_offsets
+      STATUS_STORAGE_TOPIC: _connect_status
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+      KAFKA_HEAP_OPTS: -Xms256m -Xmx512m
+    ports: ["8083:8083"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redpanda: { condition: service_healthy }
+
+  connect-init:  # idempotent connector registration
+    image: curlimages/curl:latest
+    volumes: [./connect:/connect:ro]
+    entrypoint: [sh, -c, "until curl -sf http://connect:8083/connectors; do sleep 3; done; curl -sf -X PUT -H 'Content-Type: application/json' --data @/connect/mkt-cdc.json http://connect:8083/connectors/mkt-cdc/config"]
+    restart: on-failure
+    depends_on: [connect]
+
+  redis:
+    image: redis:7-alpine
+
+  s3:  # S3-compatible object store (local stand-in for Amazon S3)
+    image: chrislusf/seaweedfs:latest
+    command: server -s3 -dir=/data
+    ports: ["8333:8333"]
+    volumes: [lake:/data]
+
+  generator:
+    <<: *app
+    command: python generator/generate.py
+
+  detector:
+    <<: *app
+    command: python processor/stream.py detect
+
+  archiver:
+    <<: *app
+    command: python processor/stream.py archive
+
+  batch:
+    <<: *app
+    command: python batch/run.py
+    volumes: [warehouse:/data]
+
+  api:
+    <<: *app
+    command: uvicorn main:app --app-dir api --host 0.0.0.0 --port 8000
+    ports: ["8000:8000"]
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/trust.json
+    ports: ["3000:3000"]
+    volumes: [./grafana/provisioning:/etc/grafana/provisioning:ro, ./grafana/dashboards:/var/lib/grafana/dashboards:ro]
+
+  # Cloud path: same Postgres -> Debezium Server -> AWS Kinesis -> Lambda -> S3  (run aws/deploy.sh first)
+  debezium-server:
+    profiles: [aws]
+    image: quay.io/debezium/server:3.0
+    env_file: [.env.aws]
+    volumes: [./aws/debezium-server.properties:/debezium/config/application.properties:ro]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+volumes: { pg: {}, lake: {}, warehouse: {} }

@@ -1,0 +1,14 @@
+marketplace:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('WAREHOUSE_PATH', 'warehouse.duckdb') }}"
+      extensions: [httpfs, icu]
+      settings:
+        s3_endpoint: "{{ env_var('S3_HOST', 'localhost:8333') }}"
+        s3_access_key_id: "{{ env_var('AWS_ACCESS_KEY_ID', 'local') }}"
+        s3_secret_access_key: "{{ env_var('AWS_SECRET_ACCESS_KEY', 'local') }}"
+        s3_region: us-east-1
+        s3_url_style: path
+        s3_use_ssl: false
