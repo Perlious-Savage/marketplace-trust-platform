@@ -12,5 +12,6 @@ jobs:
       - run: ruff check .
       - run: pytest -q
       - name: dbt build on the committed sample of the raw lake
-        run: dbt build --project-dir dbt --profiles-dir dbt --vars '{raw_path: sample/raw}'
+        run: |
+          dbt build --project-dir dbt --profiles-dir dbt --vars '{raw_path: sample/raw}'
       - run: docker compose config -q
